@@ -1,0 +1,43 @@
+name: Merge Proxy
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  deduplicate_and_remove_empty_lines:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get and process domains
+        run: |
+          {
+            curl -sSfL "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/ruleset/gfw.txt"
+            curl -sSfL "https://raw.githubusercontent.com/axcsz/Collect/master/Ruleset/GlobalGFW.list"
+            curl -sSfL "https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/refs/heads/master/Clash/ProxyGFWlist.list"
+          } | sed -E 's/#.*$//; s/\/\/.*$//; s/,no-resolve//g; s/ //g' | grep -v '^$' | grep -Ev '^(URL-REGEX|PROCESS-NAME|USER-AGENT)' | sort | uniq > Rule/Proxy.list
+
+      - name: Check and Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git status
+
+      - name: Force add changes
+        run: git add Rule/Proxy.list || true
+
+      - name: Commit and push changes if needed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Auto Update Proxy.list"
+            git push origin HEAD:main --force
+          else
+            echo "No changes to commit"
+          fi

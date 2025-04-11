@@ -1,0 +1,43 @@
+name: Merge Apple
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  deduplicate_and_remove_empty_lines:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get and merge domains from source files
+        run: |
+          {
+            curl -sSfL "https://github.com/SukkaW/Surge/raw/master/Source/ip/apple_services.conf" | awk '{print $0 "\n"}'
+            curl -sSfL "https://ruleset.skk.moe/List/non_ip/apple_services.conf" | awk '{print $0 "\n"}'
+            curl -sSfL "https://github.com/ACL4SSR/ACL4SSR/raw/refs/heads/master/Clash/Apple.list" | awk '{print $0 "\n"}'
+            curl -sSfL "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Apple/Apple_All.list" | awk '{print $0 "\n"}'
+          } | sed 's/ //g' | cat - | grep -v '^#' | grep -v '^$' | sed 's/,no-resolve//g' | grep -Ev '^IP-CIDR6|^URL-REGEX|^PROCESS-NAME|^USER-AGENT' | sort | uniq > Rule/Apple.list
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          
+      - name: Force add changes
+        run: git add Rule/Apple.list || true
+
+      - name: Commit and push changes if needed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Update Apple.list with latest domains"
+            git push origin HEAD:main --force
+          else
+            echo "No changes to commit"
+          fi
