@@ -29,7 +29,7 @@ argument = url=http://127.0.0.1:7122&name=花里胡哨才是生产力&icon=bolt.
 
   let panel = {};
   let shifts = {
-    '1': '#06D6A0',
+    '1': '#ffaa00',
     '2': '#FFD166',
     '3': '#EF476F'
   };
