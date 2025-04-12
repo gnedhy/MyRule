@@ -41,7 +41,6 @@ argument = url=http://127.0.0.1:7122&name=花里胡哨才是生产力&icon=bolt.
     `内存使用率: ${memUsage}\n` +
     `已接收: ${bytesToSize(outTraffic)}  |  已发送: ${bytesToSize(inTraffic)}\n` +
     `双向流量统计: ${trafficSize}\n` +
-    `更新时间: ${timeString}`;
 
   $done(panel);
 })().catch((e) => {
